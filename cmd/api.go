@@ -7,14 +7,17 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
+	repo "github.com/joshbedo/golang-ecom/internal/adapters/postgres/sqlc"
+	"github.com/joshbedo/golang-ecom/internal/products"
 )
 
 // Tips for writing better applications: https://12factor.net/
 
 type application struct {
 	config config
+	db     *pgx.Conn
 	// logger
-	// db driver
 	// email driver
 }
 
@@ -53,6 +56,10 @@ func (app *application) mount() http.Handler {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hi."))
 	})
+
+	productService := products.NewService(repo.New(app.db))
+	productHandler := products.NewHandler(productService)
+	r.Get("/products", productHandler.ListProducts)
 
 	return r
 }
