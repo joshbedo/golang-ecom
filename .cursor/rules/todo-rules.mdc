@@ -1,0 +1,35 @@
+# Todo Tracking System
+
+## Todo Comment Format
+
+When writing todos in code, use this format:
+
+- `@todo: [description]` - Standard todo
+- `@todo(priority): [description]` - Todo with priority (high/medium/low)
+- `@todo(priority)[component]: [description]` - Todo with priority and component/area
+
+Examples:
+
+- `@todo: Refactor this function for better performance`
+- `@todo(high): Fix security vulnerability in auth`
+- `@todo(medium)[API]: Add rate limiting`
+
+## Todo Tracking Commands
+
+When asked about todos, search the codebase for @todo comments and:
+
+1. List all todos found
+2. Group by priority if specified (high → medium → low → unspecified)
+3. Group by component/area if specified
+4. Show file path and line context for each
+5. Provide a count summary
+
+## Proactive Todo Suggestions
+
+When reviewing or writing code, suggest adding @todo comments for:
+
+- Obvious performance improvements
+- Missing error handling
+- Incomplete implementations
+- Technical debt
+- Missing tests or documentation

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -46,6 +47,9 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// Routes
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("all gravy"))
+	})
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hi."))
 	})
@@ -55,4 +59,18 @@ func (app *application) mount() http.Handler {
 	return r
 }
 
-// Run
+// Run server
+func (app *application) run(h http.Handler) error {
+	srv := &http.Server{
+		Addr:    app.config.addr,
+		Handler: h,
+		// @todo: Could be moved to config
+		WriteTimeout: time.Second * 30,
+		ReadTimeout:  time.Second * 10,
+		IdleTimeout:  time.Minute,
+	}
+
+	log.Printf("server has started at %s", app.config.addr)
+
+	return srv.ListenAndServe()
+}
