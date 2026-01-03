@@ -74,6 +74,23 @@ func (q *Queries) FindProductByID(ctx context.Context, id int64) (Product, error
 	return i, err
 }
 
+const findProductByIDForUpdate = `-- name: FindProductByIDForUpdate :one
+SELECT id, name, price_in_cents, quantity, created_at FROM products WHERE id = $1 FOR UPDATE
+`
+
+func (q *Queries) FindProductByIDForUpdate(ctx context.Context, id int64) (Product, error) {
+	row := q.db.QueryRow(ctx, findProductByIDForUpdate, id)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PriceInCents,
+		&i.Quantity,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listProducts = `-- name: ListProducts :many
 SELECT id, name, price_in_cents, quantity, created_at FROM products
 `
@@ -125,6 +142,32 @@ func (q *Queries) UpdateProductQuantity(ctx context.Context, arg UpdateProductQu
 		&i.PriceInCents,
 		&i.Quantity,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateOrderItemStatus = `-- name: UpdateOrderItemStatus :one
+UPDATE order_items
+SET status = $2
+WHERE id = $1
+RETURNING id, order_id, product_id, quantity, price_cents, status
+`
+
+type UpdateOrderItemStatusParams struct {
+	ID     int64       `json:"id"`
+	Status pgtype.Text `json:"status"`
+}
+
+func (q *Queries) UpdateOrderItemStatus(ctx context.Context, arg UpdateOrderItemStatusParams) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, updateOrderItemStatus, arg.ID, arg.Status)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.PriceCents,
+		&i.Status,
 	)
 	return i, err
 }

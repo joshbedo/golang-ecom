@@ -11,7 +11,6 @@ import (
 
 var (
 	ErrProductNotFound = errors.New("product not found")
-	ErrProductNoStock  = errors.New("product doesn't have enough stock")
 )
 
 type svc struct {
@@ -51,37 +50,61 @@ func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo
 		return repo.Order{}, err
 	}
 
-	// Look if product exists
+	// Process each order item
 	for _, item := range tempOrder.Items {
+		// Verify product exists
 		product, err := qtx.FindProductByID(ctx, item.ProductID)
 		if err != nil {
 			return repo.Order{}, ErrProductNotFound
 		}
 
-		// Check and update stock - probably should go before creating order items
-		newQuantity := product.Quantity - item.Quantity
-		if newQuantity < 0 {
-			return repo.Order{}, ErrProductNoStock
-		}
-
-		// Update the product's quantity
-		_, err = qtx.UpdateProductQuantity(ctx, repo.UpdateProductQuantityParams{
-			ID:       item.ProductID,
-			Quantity: newQuantity,
-		})
-		if err != nil {
-			return repo.Order{}, err
-		}
-
-		// Create order item
-		_, err = qtx.CreateOrderItem(ctx, repo.CreateOrderItemParams{
+		// Create order item with 'pending' status
+		orderItem, err := qtx.CreateOrderItem(ctx, repo.CreateOrderItemParams{
 			OrderID:    order.ID,
 			ProductID:  item.ProductID,
 			Quantity:   item.Quantity,
 			PriceCents: product.PriceInCents,
+			Status:     OrderItemStatusPending.Text(),
 		})
 		if err != nil {
 			return repo.Order{}, err
+		}
+
+		// Lock and check stock availability
+		product, err = qtx.FindProductByIDForUpdate(ctx, item.ProductID)
+		if err != nil {
+			return repo.Order{}, ErrProductNotFound
+		}
+
+		// Check if we have enough stock
+		hasStock := product.Quantity >= item.Quantity
+
+		if hasStock {
+			// Stock available: decrement product quantity and update status to fulfilled
+			newQuantity := product.Quantity - item.Quantity
+			_, err = qtx.UpdateProductQuantity(ctx, repo.UpdateProductQuantityParams{
+				ID:       item.ProductID,
+				Quantity: newQuantity,
+			})
+			if err != nil {
+				return repo.Order{}, err
+			}
+			_, err = qtx.UpdateOrderItemStatus(ctx, repo.UpdateOrderItemStatusParams{
+				ID:     orderItem.ID,
+				Status: OrderItemStatusFulfilled.Text(),
+			})
+			if err != nil {
+				return repo.Order{}, err
+			}
+		} else {
+			// Stock not available: update status to backordered (don't decrement stock)
+			_, err = qtx.UpdateOrderItemStatus(ctx, repo.UpdateOrderItemStatusParams{
+				ID:     orderItem.ID,
+				Status: OrderItemStatusBackordered.Text(),
+			})
+			if err != nil {
+				return repo.Order{}, err
+			}
 		}
 	}
 

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_id BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
     price_cents INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'fulfilled', 'backordered')),
     CONSTRAINT fk_order FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 -- +goose StatementEnd
