@@ -25,7 +25,7 @@
 
 ## Next Steps
 
-### 1. **Order Item Status Enhancements**
+### 1. **Order Item Status Enhancements** (DONE)
 
 **Objective:**  
 Support partial fulfillment by introducing per-item order statuses.
