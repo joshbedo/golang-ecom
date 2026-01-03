@@ -25,6 +25,7 @@ func NewService(repo *repo.Queries, db *pgx.Conn) Service {
 	}
 }
 
+// @todo(high)(testing) - create tests to make sure concurrent place order calls dont oversell a product
 func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo.Order, error) {
 	// Validate payload - could be in handler
 	if tempOrder.CustomerID == 0 {
