@@ -52,8 +52,8 @@ func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo
 
 	// Process each order item
 	for _, item := range tempOrder.Items {
-		// Verify product exists
-		product, err := qtx.FindProductByID(ctx, item.ProductID)
+		// Lock product and get current state (includes price and stock)
+		product, err := qtx.FindProductByIDForUpdate(ctx, item.ProductID)
 		if err != nil {
 			return repo.Order{}, ErrProductNotFound
 		}
@@ -68,12 +68,6 @@ func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo
 		})
 		if err != nil {
 			return repo.Order{}, err
-		}
-
-		// Lock and check stock availability
-		product, err = qtx.FindProductByIDForUpdate(ctx, item.ProductID)
-		if err != nil {
-			return repo.Order{}, ErrProductNotFound
 		}
 
 		// Check if we have enough stock
