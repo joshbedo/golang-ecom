@@ -15,12 +15,12 @@ type Order struct {
 }
 
 type OrderItem struct {
-	ID         int64       `json:"id"`
-	OrderID    int64       `json:"order_id"`
-	ProductID  int64       `json:"product_id"`
-	Quantity   int32       `json:"quantity"`
-	PriceCents int32       `json:"price_cents"`
-	Status     pgtype.Text `json:"status"`
+	ID         int64  `json:"id"`
+	OrderID    int64  `json:"order_id"`
+	ProductID  int64  `json:"product_id"`
+	Quantity   int32  `json:"quantity"`
+	PriceCents int32  `json:"price_cents"`
+	Status     string `json:"status"`
 }
 
 type Product struct {

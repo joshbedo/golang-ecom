@@ -64,7 +64,7 @@ func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo
 			ProductID:  item.ProductID,
 			Quantity:   item.Quantity,
 			PriceCents: product.PriceInCents,
-			Status:     OrderItemStatusPending.Text(),
+			Status:     string(OrderItemStatusPending),
 		})
 		if err != nil {
 			return repo.Order{}, err
@@ -85,7 +85,7 @@ func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo
 			}
 			_, err = qtx.UpdateOrderItemStatus(ctx, repo.UpdateOrderItemStatusParams{
 				ID:     orderItem.ID,
-				Status: OrderItemStatusFulfilled.Text(),
+				Status: string(OrderItemStatusFulfilled),
 			})
 			if err != nil {
 				return repo.Order{}, err
@@ -94,7 +94,7 @@ func (s *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo
 			// Stock not available: update status to backordered (don't decrement stock)
 			_, err = qtx.UpdateOrderItemStatus(ctx, repo.UpdateOrderItemStatusParams{
 				ID:     orderItem.ID,
-				Status: OrderItemStatusBackordered.Text(),
+				Status: string(OrderItemStatusBackordered),
 			})
 			if err != nil {
 				return repo.Order{}, err

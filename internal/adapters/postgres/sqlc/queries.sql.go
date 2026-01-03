@@ -7,8 +7,6 @@ package repo
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createOrder = `-- name: CreateOrder :one
@@ -30,11 +28,11 @@ VALUES ($1, $2, $3, $4, $5) RETURNING id, order_id, product_id, quantity, price_
 `
 
 type CreateOrderItemParams struct {
-	OrderID    int64       `json:"order_id"`
-	ProductID  int64       `json:"product_id"`
-	Quantity   int32       `json:"quantity"`
-	PriceCents int32       `json:"price_cents"`
-	Status     pgtype.Text `json:"status"`
+	OrderID    int64  `json:"order_id"`
+	ProductID  int64  `json:"product_id"`
+	Quantity   int32  `json:"quantity"`
+	PriceCents int32  `json:"price_cents"`
+	Status     string `json:"status"`
 }
 
 func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error) {
@@ -121,6 +119,32 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 	return items, nil
 }
 
+const updateOrderItemStatus = `-- name: UpdateOrderItemStatus :one
+UPDATE order_items
+SET status = $2
+WHERE id = $1
+RETURNING id, order_id, product_id, quantity, price_cents, status
+`
+
+type UpdateOrderItemStatusParams struct {
+	ID     int64  `json:"id"`
+	Status string `json:"status"`
+}
+
+func (q *Queries) UpdateOrderItemStatus(ctx context.Context, arg UpdateOrderItemStatusParams) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, updateOrderItemStatus, arg.ID, arg.Status)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.PriceCents,
+		&i.Status,
+	)
+	return i, err
+}
+
 const updateProductQuantity = `-- name: UpdateProductQuantity :one
 UPDATE products
 SET quantity = $2
@@ -142,32 +166,6 @@ func (q *Queries) UpdateProductQuantity(ctx context.Context, arg UpdateProductQu
 		&i.PriceInCents,
 		&i.Quantity,
 		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const updateOrderItemStatus = `-- name: UpdateOrderItemStatus :one
-UPDATE order_items
-SET status = $2
-WHERE id = $1
-RETURNING id, order_id, product_id, quantity, price_cents, status
-`
-
-type UpdateOrderItemStatusParams struct {
-	ID     int64       `json:"id"`
-	Status pgtype.Text `json:"status"`
-}
-
-func (q *Queries) UpdateOrderItemStatus(ctx context.Context, arg UpdateOrderItemStatusParams) (OrderItem, error) {
-	row := q.db.QueryRow(ctx, updateOrderItemStatus, arg.ID, arg.Status)
-	var i OrderItem
-	err := row.Scan(
-		&i.ID,
-		&i.OrderID,
-		&i.ProductID,
-		&i.Quantity,
-		&i.PriceCents,
-		&i.Status,
 	)
 	return i, err
 }
