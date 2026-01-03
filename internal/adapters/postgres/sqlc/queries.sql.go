@@ -7,7 +7,55 @@ package repo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createOrder = `-- name: CreateOrder :one
+INSERT INTO orders (
+    customer_id
+) VALUES ($1) RETURNING id, customer_id, created_at
+`
+
+func (q *Queries) CreateOrder(ctx context.Context, customerID int64) (Order, error) {
+	row := q.db.QueryRow(ctx, createOrder, customerID)
+	var i Order
+	err := row.Scan(&i.ID, &i.CustomerID, &i.CreatedAt)
+	return i, err
+}
+
+const createOrderItem = `-- name: CreateOrderItem :one
+INSERT INTO order_items (order_id, product_id, quantity, price_cents, status)
+VALUES ($1, $2, $3, $4, $5) RETURNING id, order_id, product_id, quantity, price_cents, status
+`
+
+type CreateOrderItemParams struct {
+	OrderID    int64       `json:"order_id"`
+	ProductID  int64       `json:"product_id"`
+	Quantity   int32       `json:"quantity"`
+	PriceCents int32       `json:"price_cents"`
+	Status     pgtype.Text `json:"status"`
+}
+
+func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, createOrderItem,
+		arg.OrderID,
+		arg.ProductID,
+		arg.Quantity,
+		arg.PriceCents,
+		arg.Status,
+	)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.PriceCents,
+		&i.Status,
+	)
+	return i, err
+}
 
 const findProductByID = `-- name: FindProductByID :one
 SELECT id, name, price_in_cents, quantity, created_at FROM products WHERE id = $1
@@ -54,4 +102,29 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateProductQuantity = `-- name: UpdateProductQuantity :one
+UPDATE products
+SET quantity = $2
+WHERE id = $1
+RETURNING id, name, price_in_cents, quantity, created_at
+`
+
+type UpdateProductQuantityParams struct {
+	ID       int64 `json:"id"`
+	Quantity int32 `json:"quantity"`
+}
+
+func (q *Queries) UpdateProductQuantity(ctx context.Context, arg UpdateProductQuantityParams) (Product, error) {
+	row := q.db.QueryRow(ctx, updateProductQuantity, arg.ID, arg.Quantity)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PriceInCents,
+		&i.Quantity,
+		&i.CreatedAt,
+	)
+	return i, err
 }
