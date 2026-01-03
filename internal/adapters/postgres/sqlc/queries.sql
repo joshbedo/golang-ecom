@@ -14,6 +14,9 @@ INSERT INTO orders (
 INSERT INTO order_items (order_id, product_id, quantity, price_cents, status)
 VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
+-- name: GetProductByID :one
+SELECT * FROM products WHERE id = $1;
+
 -- name: FindProductByIDForUpdate :one
 SELECT * FROM products WHERE id = $1 FOR UPDATE;
 
