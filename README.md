@@ -2,8 +2,9 @@
 
 - Golang 1.25.3
 - Chi - routing
-- SqlC - queries
+- SQLC - queries
 - Goose - migrations
+- Docker
 
 ## Architecture Overview
 
@@ -15,9 +16,10 @@
 
 ## Helpful Dev Commands
 
+- `docker compose up -d` - start the postgres database
 - `go run cmd/*.go` - run the application
 - `sqlc generate` - will regenerate your SQL queries
-- `goose -s create create_products sql` - will create your migrations
+- `goose -s create create_products sql` - will create migrations under `internal/adapter/postgres/migrations`
 - `goose up` - apply all available migrations
 - `goose down` - roll back a single migration from the current version
 
